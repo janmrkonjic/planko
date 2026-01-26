@@ -1,6 +1,3 @@
--- Enable RLS on auth.users (optional but good practice if you extend it)
-alter table auth.users enable row level security;
-
 -- PROFILES
 create table public.profiles (
   id uuid not null references auth.users(id) on delete cascade primary key,
