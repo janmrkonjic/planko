@@ -119,11 +119,29 @@ export function useBoardDetails(boardId: string | undefined) {
     },
   })
 
+  const moveTask = useMutation({
+    mutationFn: async ({ taskId, columnId, orderIndex }: { taskId: string; columnId: string; orderIndex: number }) => {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ column_id: columnId, order_index: orderIndex })
+        .eq('id', taskId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+        // We will manage optimistic updates manually in onDragEnd, so we might not need to invalidate immediately 
+        // if we want to avoid flickering, but eventually we should sync.
+        // For now, let's invalidate to be safe, but debouncing this might be better in production.
+      queryClient.invalidateQueries({ queryKey: ['board', boardId] })
+    },
+  })
+
   return {
     board,
     isLoading,
     error,
     addColumn: addColumn.mutate,
     addTask: addTask.mutate,
+    moveTask: moveTask.mutate,
   }
 }

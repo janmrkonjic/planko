@@ -4,6 +4,7 @@ import TaskCard from "./TaskCard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, X } from "lucide-react"
+import { Droppable } from "@hello-pangea/dnd"
 
 interface ColumnProps {
   column: ColumnType & { tasks: Task[] }
@@ -30,11 +31,20 @@ export default function Column({ column, onAddTask }: ColumnProps) {
         <span className="text-xs text-muted-foreground">{column.tasks.length}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 px-1">
-        {column.tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
-        ))}
-      </div>
+      <Droppable droppableId={column.id}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`flex-1 overflow-y-auto min-h-[100px] px-1 transition-colors rounded-md ${snapshot.isDraggingOver ? "bg-secondary/50" : ""}`}
+          >
+            {column.tasks.map((task, index) => (
+              <TaskCard key={task.id} task={task} index={index} />
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
 
       <div className="mt-2 px-1">
         {isAddingTask ? (
