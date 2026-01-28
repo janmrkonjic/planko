@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useBoardsQuery, useCreateBoardMutation } from '@/hooks/useBoards'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -34,6 +35,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Plus } from 'lucide-react'
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const { session, signOut } = useAuth()
   const { data: boards, isLoading, error } = useBoardsQuery()
   const createBoardMutation = useCreateBoardMutation()
@@ -173,7 +175,7 @@ export default function DashboardPage() {
               <Card 
                 key={board.id} 
                 className="group relative cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
-                onClick={() => console.log('Navigate to board:', board.id)}
+                onClick={() => navigate(`/board/${board.id}`)}
               >
                 <CardHeader>
                   <CardTitle className="text-xl group-hover:text-primary transition-colors">{board.title}</CardTitle>

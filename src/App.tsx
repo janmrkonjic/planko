@@ -1,7 +1,9 @@
 import './App.css'
 import { useAuth } from './hooks/useAuth'
 import AuthPage from './components/pages/AuthPage'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import DashboardPage from './components/pages/DashboardPage'
+import BoardView from './components/features/board/BoardView'
 
 function App() {
   const { session, loading } = useAuth()
@@ -15,7 +17,11 @@ function App() {
   }
 
   return (
-    <DashboardPage />
+    <Routes>
+      <Route path="/" element={<DashboardPage />} />
+      <Route path="/board/:boardId" element={<BoardView />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 
