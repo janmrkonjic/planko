@@ -22,6 +22,15 @@ export interface Task {
   created_at: string
 }
 
+export interface Subtask {
+  id: string
+  task_id: string
+  title: string
+  is_completed: boolean
+  order_index: number
+  created_at: string
+}
+
 export interface BoardDetails extends Board {
   columns: (Column & { tasks: Task[] })[]
 }

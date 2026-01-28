@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { BoardDetails, Column, Task } from '../types'
+import { BoardDetails, Task } from '../types'
 
 export function useBoardDetails(boardId: string | undefined) {
   const queryClient = useQueryClient()
