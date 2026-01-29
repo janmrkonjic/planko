@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,12 +14,23 @@ import {
 } from '@/components/ui/card'
 
 export default function AuthPage() {
-  const { supabase } = useAuth()
+  const { supabase, session } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLogin, setIsLogin] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const redirectUrl = searchParams.get('redirect')
+
+  // If already logged in, redirect immediately
+  useEffect(() => {
+    if (session) {
+      navigate(redirectUrl || '/dashboard')
+    }
+  }, [session, redirectUrl, navigate])
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,6 +51,7 @@ export default function AuthPage() {
         })
         if (error) throw error
       }
+      // Redirect will happen automatically via useEffect when session updates
     } catch (err: any) {
       setError(err.message)
     } finally {

@@ -3,10 +3,11 @@ import { useBoardDetails } from '@/hooks/useBoardDetails'
 import { useUpdateBoardMutation } from '@/hooks/useBoards'
 import Column from './Column'
 import BoardStats from './BoardStats'
+import { BoardMembersDialog } from './BoardMembersDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, X, Search, AlertCircle, BarChart3 } from 'lucide-react'
+import { Plus, X, Search, AlertCircle, BarChart3, Users } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { useQueryClient } from '@tanstack/react-query'
@@ -25,6 +26,7 @@ export default function BoardView() {
   const [searchQuery, setSearchQuery] = useState("")
   const [priorityFilter, setPriorityFilter] = useState<'all' | Priority>('all')
   const [isStatsOpen, setIsStatsOpen] = useState(false)
+  const [isMembersOpen, setIsMembersOpen] = useState(false)
   
   const queryClient = useQueryClient()
   
@@ -214,7 +216,16 @@ export default function BoardView() {
             )}
 
             {/* Stats Button */}
-            <div className="ml-auto">
+            <div className="ml-auto flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMembersOpen(true)}
+                className="h-9"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Share
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -296,6 +307,14 @@ export default function BoardView() {
           board={displayBoard} 
           open={isStatsOpen} 
           onOpenChange={setIsStatsOpen} 
+        />
+
+        {/* Board Members Dialog */}
+        <BoardMembersDialog
+          boardId={boardId!}
+          ownerId={board.owner_id}
+          open={isMembersOpen}
+          onOpenChange={setIsMembersOpen}
         />
       </div>
     </DragDropContext>

@@ -23,6 +23,7 @@ export interface Task {
   priority: Priority
   due_date: string | null
   order_index: number
+  assignee_id: string | null
   created_at: string
 }
 
@@ -45,5 +46,22 @@ export interface Profile {
   username: string | null
   full_name: string | null
   avatar_url: string | null
+  created_at: string
+}
+
+export interface BoardMember {
+  id: string
+  board_id: string
+  user_id: string
+  role: 'owner' | 'member'
+  created_at: string
+  profile?: Profile
+}
+
+export interface BoardInvite {
+  id: string
+  board_id: string
+  email: string
+  token: string
   created_at: string
 }

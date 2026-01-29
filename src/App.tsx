@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import DashboardPage from './components/pages/DashboardPage'
 import SettingsPage from './components/pages/SettingsPage'
 import BoardView from './components/features/board/BoardView'
+import { JoinPage } from './components/pages/JoinPage'
 import { Toaster } from '@/components/ui/sonner'
 
 function App() {
@@ -22,8 +23,10 @@ function App() {
     <div className="min-h-screen bg-background text-foreground">
       <Routes>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/board/:boardId" element={<BoardView />} />
+        <Route path="/join" element={<JoinPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
