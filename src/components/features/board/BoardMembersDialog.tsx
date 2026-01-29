@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Users, Mail, X, Crown } from 'lucide-react'
+import { Users, X, Crown, Link2, Copy } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -8,10 +7,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useBoardMembers, useInviteUser, useRemoveMember } from '@/hooks/useBoardMembers'
+import { useBoardMembers, useGenerateInviteLink, useRemoveMember } from '@/hooks/useBoardMembers'
 import { useAuth } from '@/hooks/useAuth'
+import { toast } from 'sonner'
+
 
 interface BoardMembersDialogProps {
   boardId: string
@@ -21,20 +21,22 @@ interface BoardMembersDialogProps {
 }
 
 export function BoardMembersDialog({ boardId, ownerId, open, onOpenChange }: BoardMembersDialogProps) {
-  const [email, setEmail] = useState('')
   const { user } = useAuth()
   const { data: members, isLoading } = useBoardMembers(boardId)
-  const inviteUser = useInviteUser(boardId)
+  const generateLink = useGenerateInviteLink(boardId)
   const removeMember = useRemoveMember(boardId)
 
   const isOwner = user?.id === ownerId
 
-  const handleInvite = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email.trim()) return
-
-    await inviteUser.mutateAsync(email)
-    setEmail('')
+  const handleCopyLink = async () => {
+    try {
+      const token = await generateLink.mutateAsync()
+      const inviteLink = `${window.location.origin}/join?token=${token}`
+      await navigator.clipboard.writeText(inviteLink)
+      toast.success('Invite link copied to clipboard!')
+    } catch (error) {
+      // Error already handled by mutation
+    }
   }
 
   const handleRemove = (memberId: string) => {
@@ -67,27 +69,25 @@ export function BoardMembersDialog({ boardId, ownerId, open, onOpenChange }: Boa
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Invite Form */}
+          {/* Share Link Section */}
           {isOwner && (
-            <form onSubmit={handleInvite} className="space-y-2">
-              <label className="text-sm font-medium">Invite by Email</label>
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="colleague@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={inviteUser.isPending}
-                />
-                <Button type="submit" disabled={inviteUser.isPending || !email.trim()}>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Invite
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Share Board</label>
+              <div className="flex flex-col gap-2 p-4 rounded-lg border bg-secondary/20">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Link2 className="h-4 w-4" />
+                  <span>Anyone with this link can join the board</span>
+                </div>
+                <Button 
+                  onClick={handleCopyLink} 
+                  disabled={generateLink.isPending}
+                  className="w-full"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  {generateLink.isPending ? 'Generating...' : 'Copy Invite Link'}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                An invite link will be generated and copied to your clipboard
-              </p>
-            </form>
+            </div>
           )}
 
           {/* Members List */}

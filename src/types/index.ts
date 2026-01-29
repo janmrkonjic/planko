@@ -61,7 +61,7 @@ export interface BoardMember {
 export interface BoardInvite {
   id: string
   board_id: string
-  email: string
   token: string
   created_at: string
 }
+

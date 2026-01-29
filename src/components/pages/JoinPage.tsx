@@ -32,8 +32,8 @@ export function JoinPage() {
     // Authenticated, attempt to join the board
     joinBoard.mutate(token, {
       onSuccess: (boardId) => {
-        // Redirect to the board
-        navigate(`/board/${boardId}`)
+        // Redirect to dashboard to see updated board list
+        navigate('/dashboard')
       },
       onError: () => {
         // Redirect to dashboard on error

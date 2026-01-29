@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { UserAvatar } from '@/components/common/UserAvatar'
 import { Button } from '@/components/ui/button'
 import { Upload, Loader2, Trash2 } from 'lucide-react'
 import { uploadAvatar } from '@/hooks/useProfile'
@@ -8,18 +8,15 @@ import { toast } from 'sonner'
 interface AvatarUploadProps {
   currentAvatarUrl: string | null
   username: string | null
+  fullName?: string | null
+  email?: string | null
   onUploadComplete: (url: string) => void
   onRemove: () => void
 }
 
-export function AvatarUpload({ currentAvatarUrl, username, onUploadComplete, onRemove }: AvatarUploadProps) {
+export function AvatarUpload({ currentAvatarUrl, username, fullName, email, onUploadComplete, onRemove }: AvatarUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const getInitials = () => {
-    if (!username) return '?'
-    return username.substring(0, 2).toUpperCase()
-  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -59,10 +56,11 @@ export function AvatarUpload({ currentAvatarUrl, username, onUploadComplete, onR
 
   return (
     <div className="flex items-center gap-4">
-      <Avatar className="h-20 w-20">
-        <AvatarImage src={currentAvatarUrl || undefined} alt={username || 'User'} />
-        <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
-      </Avatar>
+      <UserAvatar 
+        user={{ avatar_url: currentAvatarUrl, full_name: fullName, username, email }} 
+        className="h-20 w-20"
+        fallbackClassName="text-lg"
+      />
       
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">

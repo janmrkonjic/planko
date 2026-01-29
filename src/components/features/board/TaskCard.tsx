@@ -2,10 +2,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Task } from "@/types"
 import { Draggable } from "@hello-pangea/dnd"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import TaskDetailModal from "./TaskDetailModal"
 import { Clock } from "lucide-react"
 import { format, isPast } from "date-fns"
+import { UserAvatar } from "@/components/common/UserAvatar"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { supabase } from "@/lib/supabase"
 
 interface TaskCardProps {
   task: Task
@@ -28,8 +31,31 @@ const getPriorityColor = (priority: string) => {
 
 export default function TaskCard({ task, index, onDeleteTask }: TaskCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [assigneeProfile, setAssigneeProfile] = useState<any>(null)
   
   const isOverdue = task.due_date ? isPast(new Date(task.due_date)) && !isPast(new Date(new Date(task.due_date).setHours(23, 59, 59))) : false
+
+  // Fetch assignee profile if task is assigned
+  useEffect(() => {
+    const fetchAssignee = async () => {
+      if (!task.assignee_id) {
+        setAssigneeProfile(null)
+        return
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', task.assignee_id)
+        .single()
+
+      if (data) {
+        setAssigneeProfile(data)
+      }
+    }
+
+    fetchAssignee()
+  }, [task.assignee_id])
 
   return (
     <>
@@ -63,6 +89,26 @@ export default function TaskCard({ task, index, onDeleteTask }: TaskCardProps) {
                       <Clock className="h-3 w-3" />
                       <span>{format(new Date(task.due_date), "MMM d")}</span>
                     </div>
+                  )}
+
+                  {/* Assignee Avatar */}
+                  {task.assignee_id && assigneeProfile && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="ml-auto">
+                            <UserAvatar 
+                              user={assigneeProfile} 
+                              className="h-6 w-6 border-2 border-background"
+                              fallbackClassName="text-xs"
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{assigneeProfile.full_name || assigneeProfile.username || assigneeProfile.email || 'Unknown User'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               </CardContent>

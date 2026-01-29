@@ -2,12 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { BoardDetails, Task } from '../types'
 import { toast } from 'sonner'
+import { useAuth } from './useAuth'
 
 export function useBoardDetails(boardId: string | undefined) {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   const { data: board, isLoading, error } = useQuery({
-    queryKey: ['board', boardId],
+    queryKey: ['board', boardId, user?.id],
     queryFn: async () => {
       if (!boardId) throw new Error('Board ID is required')
 

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBoardsQuery, useCreateBoardMutation, useDeleteBoardMutation } from '@/hooks/useBoards'
-import { useAuth } from '@/hooks/useAuth'
 import { useProfileQuery } from '@/hooks/useProfile'
+import { UserNav } from '@/components/common/UserNav'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,21 +33,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, Trash2 } from 'lucide-react'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { session, signOut } = useAuth()
   const { data: boards, isLoading, error } = useBoardsQuery()
   const { data: profile } = useProfileQuery()
   const createBoardMutation = useCreateBoardMutation()
@@ -77,16 +67,8 @@ export default function DashboardPage() {
       },
     })
   }
-
-  const handleSignOut = async () => {
-    await signOut()
-  }
-
-  const userInitials = profile?.username?.substring(0, 2).toUpperCase() || 
-    profile?.full_name?.substring(0, 2).toUpperCase() || 
-    session?.user.email?.substring(0, 2).toUpperCase() || 'U'
   
-  const displayName = profile?.full_name || profile?.username || session?.user.email?.split('@')[0] || 'User'
+  const displayName = profile?.full_name || profile?.username || 'User'
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,33 +80,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.avatar_url || undefined} alt="User" />
-                    <AvatarFallback>{userInitials}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Account</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {session?.user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut}>
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <UserNav />
           </div>
         </div>
       </header>

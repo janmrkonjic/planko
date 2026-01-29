@@ -4,6 +4,7 @@ import { useUpdateBoardMutation } from '@/hooks/useBoards'
 import Column from './Column'
 import BoardStats from './BoardStats'
 import { BoardMembersDialog } from './BoardMembersDialog'
+import { UserNav } from '@/components/common/UserNav'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -155,7 +156,7 @@ export default function BoardView() {
     <DragDropContext onDragEnd={isFiltering ? () => {} : handleDragEnd}>
       <div className="flex flex-col h-screen bg-background">
         {/* Board Header */}
-        <div className="h-14 border-b flex items-center px-6 shrink-0">
+        <div className="h-14 border-b flex items-center justify-between px-6 shrink-0">
           {isEditingTitle ? (
             <Input
               value={editedTitle}
@@ -173,6 +174,7 @@ export default function BoardView() {
               {board.title}
             </h1>
           )}
+          <UserNav />
         </div>
 
         {/* Search and Filter Toolbar */}
@@ -215,7 +217,7 @@ export default function BoardView() {
               </Button>
             )}
 
-            {/* Stats Button */}
+            {/* Action Buttons */}
             <div className="ml-auto flex gap-2">
               <Button
                 variant="outline"

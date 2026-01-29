@@ -5,14 +5,16 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useTaskDetails } from "@/hooks/useTaskDetails"
-import { X, Wand2, Trash2, CalendarIcon } from "lucide-react"
-import { useState } from "react"
+import { X, Wand2, Trash2, CalendarIcon, UserCircle } from "lucide-react"
+import { useState, useEffect } from "react"
 import { useAiBreakdown } from "@/hooks/useAiBreakdown"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import type { Priority } from "@/types"
+import { supabase } from "@/lib/supabase"
+import { UserAvatar } from '@/components/common/UserAvatar'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +48,72 @@ export default function TaskDetailModal({ taskId, isOpen, onClose, onDeleteTask 
 
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [boardMembers, setBoardMembers] = useState<any[]>([])
+  const [boardOwnerId, setBoardOwnerId] = useState<string | null>(null)
+
+  // Fetch board members and owner
+  useEffect(() => {
+    const fetchBoardData = async () => {
+      if (!task) return
+
+      // Get board_id from task's column
+      const { data: column } = await supabase
+        .from('columns')
+        .select('board_id')
+        .eq('id', task.column_id)
+        .single()
+
+      if (!column) return
+
+      // Get board owner
+      const { data: board } = await supabase
+        .from('boards')
+        .select('owner_id')
+        .eq('id', column.board_id)
+        .single()
+
+      if (!board) return
+
+      setBoardOwnerId(board.owner_id)
+
+      // Fetch owner's profile
+      const { data: ownerProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', board.owner_id)
+        .single()
+
+      // Get board members with profiles
+      const { data: members } = await supabase
+        .from('board_members')
+        .select(`
+          user_id,
+          profiles(*)
+        `)
+        .eq('board_id', column.board_id)
+
+      // Combine owner and members, removing duplicates
+      const allMembers = []
+      
+      // Add owner first
+      if (ownerProfile) {
+        allMembers.push({
+          user_id: board.owner_id,
+          profiles: ownerProfile
+        })
+      }
+
+      // Add other members (filter out owner if they're also in board_members)
+      if (members) {
+        const otherMembers = members.filter(m => m.user_id !== board.owner_id)
+        allMembers.push(...otherMembers)
+      }
+
+      setBoardMembers(allMembers)
+    }
+
+    fetchBoardData()
+  }, [task])
 
   const handleDescriptionBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     if (task && e.target.value !== task.description) {
@@ -85,6 +153,10 @@ export default function TaskDetailModal({ taskId, isOpen, onClose, onDeleteTask 
     updateTask({ due_date: date ? date.toISOString() : null })
   }
 
+  const handleAssigneeChange = (assigneeId: string) => {
+    updateTask({ assignee_id: assigneeId === 'unassigned' ? null : assigneeId })
+  }
+
   if (isLoading && !task) return null
 
   return (
@@ -109,7 +181,7 @@ export default function TaskDetailModal({ taskId, isOpen, onClose, onDeleteTask 
             </div>
 
             {/* Metadata Section */}
-            <div className="mb-6 grid grid-cols-2 gap-4">
+            <div className="mb-6 grid grid-cols-3 gap-4">
               {/* Priority Selector */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-muted-foreground">Priority</Label>
@@ -147,6 +219,42 @@ export default function TaskDetailModal({ taskId, isOpen, onClose, onDeleteTask 
                     />
                   </PopoverContent>
                 </Popover>
+              </div>
+
+              {/* Assignee Selector */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Assignee</Label>
+                <Select value={task?.assignee_id || 'unassigned'} onValueChange={handleAssigneeChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">
+                      <div className="flex items-center gap-2">
+                        <UserCircle className="h-4 w-4" />
+                        <span>Unassigned</span>
+                      </div>
+                    </SelectItem>
+                    {/* Filter unique members by user_id to avoid duplicates */}
+                    {boardMembers
+                      .filter((v, i, a) => a.findIndex(t => t.user_id === v.user_id) === i)
+                      .map((member) => {
+                        const profile = member.profiles
+                        return (
+                          <SelectItem key={member.user_id} value={member.user_id}>
+                            <div className="flex items-center gap-2">
+                              <UserAvatar 
+                                user={profile} 
+                                className="h-5 w-5"
+                                fallbackClassName="text-xs"
+                              />
+                              <span>{profile?.full_name || profile?.username || profile?.email || 'Unknown User'}</span>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

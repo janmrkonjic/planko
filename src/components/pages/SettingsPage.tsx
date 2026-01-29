@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AvatarUpload } from '@/components/features/settings/AvatarUpload'
 import { useProfileQuery, useUpdateProfileMutation } from '@/hooks/useProfile'
+import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/contexts/ThemeProvider'
 import { ArrowLeft, Save } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
+  const { session } = useAuth()
   const { data: profile, isLoading } = useProfileQuery()
   const updateProfile = useUpdateProfileMutation()
   const { theme, setTheme } = useTheme()
@@ -95,6 +97,8 @@ export default function SettingsPage() {
                 <AvatarUpload
                   currentAvatarUrl={avatarUrl}
                   username={username || profile?.username || null}
+                  fullName={fullName || profile?.full_name || null}
+                  email={session?.user.email || null}
                   onUploadComplete={handleAvatarUpload}
                   onRemove={handleRemoveAvatar}
                 />

@@ -25,47 +25,21 @@ export function useBoardMembers(boardId: string | undefined) {
   })
 }
 
-export function useInviteUser(boardId: string) {
-  const queryClient = useQueryClient()
-
+export function useGenerateInviteLink(boardId: string) {
   return useMutation({
-    mutationFn: async (email: string) => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Not authenticated')
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .rpc('generate_invite_link', { p_board_id: boardId })
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ boardId, email }),
-        }
-      )
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to invite user')
-      }
-
-      return response.json()
-    },
-    onSuccess: (data) => {
-      toast.success(data.message || 'Invite sent successfully')
-      // Show the invite link to the user
-      if (data.inviteLink) {
-        navigator.clipboard.writeText(data.inviteLink)
-        toast.info('Invite link copied to clipboard!')
-      }
-      queryClient.invalidateQueries({ queryKey: ['board-members', boardId] })
+      if (error) throw error
+      return data as string // Returns the token (uuid)
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to invite user')
+      toast.error(error.message || 'Failed to generate invite link')
     },
   })
 }
+
 
 export function useRemoveMember(boardId: string) {
   const queryClient = useQueryClient()
@@ -92,45 +66,11 @@ export function useRemoveMember(boardId: string) {
 export function useJoinBoard() {
   return useMutation({
     mutationFn: async (token: string) => {
-      // Get the invite
-      const { data: invite, error: inviteError } = await supabase
-        .from('board_invites')
-        .select('*')
-        .eq('token', token)
-        .single()
+      const { data: boardId, error } = await supabase
+        .rpc('join_board_via_token', { invite_token: token })
 
-      if (inviteError || !invite) {
-        throw new Error('Invalid or expired invite')
-      }
-
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      // Add user to board_members
-      const { error: memberError } = await supabase
-        .from('board_members')
-        .insert({
-          board_id: invite.board_id,
-          user_id: user.id,
-          role: 'member',
-        })
-
-      if (memberError) {
-        // Check if already a member
-        if (memberError.code === '23505') {
-          throw new Error('You are already a member of this board')
-        }
-        throw memberError
-      }
-
-      // Delete the invite
-      await supabase
-        .from('board_invites')
-        .delete()
-        .eq('token', token)
-
-      return invite.board_id
+      if (error) throw error
+      return boardId as string
     },
     onSuccess: () => {
       toast.success('Successfully joined the board!')
@@ -140,3 +80,4 @@ export function useJoinBoard() {
     },
   })
 }
+
