@@ -2,10 +2,11 @@ import { useParams } from 'react-router-dom'
 import { useBoardDetails } from '@/hooks/useBoardDetails'
 import { useUpdateBoardMutation } from '@/hooks/useBoards'
 import Column from './Column'
+import BoardStats from './BoardStats'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, X, Search, AlertCircle } from 'lucide-react'
+import { Plus, X, Search, AlertCircle, BarChart3 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { useQueryClient } from '@tanstack/react-query'
@@ -23,6 +24,7 @@ export default function BoardView() {
   // Search and Filter State
   const [searchQuery, setSearchQuery] = useState("")
   const [priorityFilter, setPriorityFilter] = useState<'all' | Priority>('all')
+  const [isStatsOpen, setIsStatsOpen] = useState(false)
   
   const queryClient = useQueryClient()
   
@@ -59,11 +61,10 @@ export default function BoardView() {
     // Update query cache immediately
     queryClient.setQueryData(['board', boardId], newBoard)
 
-    // Persist to DB
+    // Persist to DB with all tasks in the destination column
     moveTask({
-      taskId: draggableId,
       columnId: destColumn.id,
-      orderIndex: destination.index // Simplification: we rely on index for now, ideally strictly managed order_index
+      allTasks: destColumn.tasks, // Pass all tasks in destination column for proper reordering
     })
   }
 
@@ -211,6 +212,19 @@ export default function BoardView() {
                 Clear Filters
               </Button>
             )}
+
+            {/* Stats Button */}
+            <div className="ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsStatsOpen(true)}
+                className="h-9"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Statistics
+              </Button>
+            </div>
           </div>
 
           {/* Warning when drag is disabled */}
@@ -276,6 +290,13 @@ export default function BoardView() {
 
           </div>
         </div>
+
+        {/* Statistics Dialog */}
+        <BoardStats 
+          board={displayBoard} 
+          open={isStatsOpen} 
+          onOpenChange={setIsStatsOpen} 
+        />
       </div>
     </DragDropContext>
   )

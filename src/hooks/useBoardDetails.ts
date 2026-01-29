@@ -183,18 +183,41 @@ export function useBoardDetails(boardId: string | undefined) {
   })
 
   const moveTask = useMutation({
-    mutationFn: async ({ taskId, columnId, orderIndex }: { taskId: string; columnId: string; orderIndex: number }) => {
-      const { error } = await supabase
-        .from('tasks')
-        .update({ column_id: columnId, order_index: orderIndex })
-        .eq('id', taskId)
+    mutationFn: async ({ columnId, allTasks }: { 
+      columnId: string; 
+      allTasks: Task[];
+    }) => {
+      // The allTasks array is already in the correct visual order from the optimistic update
+      // It contains ONLY the tasks in the destination column (after the move)
+      // We just need to assign sequential order_index values based on array position
+      
+      // Update all tasks in the column with sequential order_index values
+      // The array is already in the correct order, so we just assign 0, 1, 2, 3...
+      const updates = allTasks.map((task, index) => 
+        supabase
+          .from('tasks')
+          .update({ 
+            column_id: columnId, // Set the correct column_id (crucial for cross-column moves)
+            order_index: index 
+          })
+          .eq('id', task.id)
+      )
 
-      if (error) throw error
+      const results = await Promise.all(updates)
+      const errors = results.filter(r => r.error)
+      
+      
+      if (errors.length > 0) {
+        throw new Error('Failed to update task order indices')
+      }
     },
     onSuccess: () => {
-        // We will manage optimistic updates manually in onDragEnd, so we might not need to invalidate immediately 
-        // if we want to avoid flickering, but eventually we should sync.
-        // For now, let's invalidate to be safe, but debouncing this might be better in production.
+      // Invalidate to sync with database
+      queryClient.invalidateQueries({ queryKey: ['board', boardId] })
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to move task: ${error.message}`)
+      // Invalidate to revert optimistic update
       queryClient.invalidateQueries({ queryKey: ['board', boardId] })
     },
   })
