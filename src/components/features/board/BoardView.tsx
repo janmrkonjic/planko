@@ -4,10 +4,12 @@ import { useUpdateBoardMutation } from '@/hooks/useBoards'
 import Column from './Column'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, X } from 'lucide-react'
-import { useState } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, X, Search, AlertCircle } from 'lucide-react'
+import { useState, useMemo } from 'react'
 import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { useQueryClient } from '@tanstack/react-query'
+import type { Priority } from '@/types'
 
 export default function BoardView() {
   const { boardId } = useParams<{ boardId: string }>()
@@ -17,7 +19,15 @@ export default function BoardView() {
   const [newColumnTitle, setNewColumnTitle] = useState("")
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editedTitle, setEditedTitle] = useState("")
+  
+  // Search and Filter State
+  const [searchQuery, setSearchQuery] = useState("")
+  const [priorityFilter, setPriorityFilter] = useState<'all' | Priority>('all')
+  
   const queryClient = useQueryClient()
+  
+  // Check if filtering is active
+  const isFiltering = searchQuery.trim() !== '' || priorityFilter !== 'all'
 
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result
@@ -97,6 +107,37 @@ export default function BoardView() {
     }
   }
 
+  // Filter board data based on search and priority
+  const filteredBoard = useMemo(() => {
+    if (!board) return null
+    if (!isFiltering) return board
+
+    const filtered = {
+      ...board,
+      columns: board.columns.map(column => ({
+        ...column,
+        tasks: column.tasks.filter(task => {
+          // Search filter (case-insensitive)
+          const matchesSearch = searchQuery.trim() === '' || 
+            task.title.toLowerCase().includes(searchQuery.toLowerCase())
+          
+          // Priority filter
+          const matchesPriority = priorityFilter === 'all' || 
+            task.priority === priorityFilter
+          
+          return matchesSearch && matchesPriority
+        })
+      }))
+    }
+    
+    return filtered
+  }, [board, searchQuery, priorityFilter, isFiltering])
+
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setPriorityFilter('all')
+  }
+
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">Loading board...</div>
   }
@@ -105,8 +146,10 @@ export default function BoardView() {
     return <div className="flex h-screen items-center justify-center text-red-500">Error loading board</div>
   }
 
+  const displayBoard = filteredBoard || board
+
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <DragDropContext onDragEnd={isFiltering ? () => {} : handleDragEnd}>
       <div className="flex flex-col h-screen bg-background">
         {/* Board Header */}
         <div className="h-14 border-b flex items-center px-6 shrink-0">
@@ -129,12 +172,62 @@ export default function BoardView() {
           )}
         </div>
 
+        {/* Search and Filter Toolbar */}
+        <div className="border-b px-6 py-3 bg-secondary/20">
+          <div className="flex items-center gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
+
+            {/* Priority Filter */}
+            <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as 'all' | Priority)}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Clear Filters Button */}
+            {isFiltering && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilters}
+                className="h-9"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Clear Filters
+              </Button>
+            )}
+          </div>
+
+          {/* Warning when drag is disabled */}
+          {isFiltering && (
+            <div className="flex items-center gap-2 mt-2 text-xs text-amber-600">
+              <AlertCircle className="h-3 w-3" />
+              <span>Drag and drop is disabled while filters are active. Clear filters to reorder tasks.</span>
+            </div>
+          )}
+        </div>
+
         {/* Board Content (Horizontal Scroll) */}
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <div className="h-full p-6 flex items-start">
             
             {/* Columns */}
-            {board.columns.map((column) => (
+            {displayBoard?.columns.map((column) => (
               <Column 
                 key={column.id} 
                 column={column} 
