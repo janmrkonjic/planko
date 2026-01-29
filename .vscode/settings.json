@@ -1,0 +1,9 @@
+{
+  "deno.enable": true,
+  "deno.enablePaths": [
+    "supabase",
+    "supabase/functions/generate-subtasks"
+  ],
+  "deno.unstable": true,
+  "deno.lint": true
+}

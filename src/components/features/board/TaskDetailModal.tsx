@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useTaskDetails } from "@/hooks/useTaskDetails"
 import { X, Wand2 } from "lucide-react"
 import { useState } from "react"
+import { useAiBreakdown } from "@/hooks/useAiBreakdown"
 
 interface TaskDetailModalProps {
   taskId: string
@@ -24,6 +25,8 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
     deleteSubtask 
   } = useTaskDetails(taskId)
 
+  const { generateSubtasks, isGenerating } = useAiBreakdown()
+
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
 
   const handleDescriptionBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
@@ -37,6 +40,15 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
     if (!newSubtaskTitle.trim()) return
     addSubtask(newSubtaskTitle)
     setNewSubtaskTitle("")
+  }
+
+  const handleAiBreakdown = async () => {
+    if (!task) return
+    await generateSubtasks({ 
+      taskId: task.id, 
+      taskTitle: task.title, 
+      taskDescription: task.description 
+    })
   }
 
   if (isLoading && !task) return null
@@ -68,12 +80,12 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-7 text-xs border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 hover:text-purple-800"
-                onClick={() => console.log("AI Magic triggered")}
-                disabled
+                className={`h-7 text-xs border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 hover:text-purple-800 ${isGenerating ? "animate-pulse" : ""}`}
+                onClick={handleAiBreakdown}
+                disabled={isGenerating}
               >
-                <Wand2 className="w-3 h-3 mr-1.5" />
-                Break down with AI
+                <Wand2 className={`w-3 h-3 mr-1.5 ${isGenerating ? "animate-spin" : ""}`} />
+                {isGenerating ? "Thinking..." : "Break down with AI"}
               </Button>
             </div>
 
@@ -115,4 +127,3 @@ export default function TaskDetailModal({ taskId, isOpen, onClose }: TaskDetailM
     </Dialog>
   )
 }
-
