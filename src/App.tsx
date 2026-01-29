@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth'
 import AuthPage from './components/pages/AuthPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import DashboardPage from './components/pages/DashboardPage'
+import SettingsPage from './components/pages/SettingsPage'
 import BoardView from './components/features/board/BoardView'
 import { Toaster } from '@/components/ui/sonner'
 
@@ -21,6 +22,7 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/board/:boardId" element={<BoardView />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

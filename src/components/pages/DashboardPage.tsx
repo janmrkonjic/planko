@@ -111,6 +111,9 @@ export default function DashboardPage() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  Settings
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   Log out
                 </DropdownMenuItem>
