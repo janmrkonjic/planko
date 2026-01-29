@@ -4,6 +4,7 @@ import AuthPage from './components/pages/AuthPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import DashboardPage from './components/pages/DashboardPage'
 import BoardView from './components/features/board/BoardView'
+import { Toaster } from '@/components/ui/sonner'
 
 function App() {
   const { session, loading } = useAuth()
@@ -17,11 +18,14 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<DashboardPage />} />
-      <Route path="/board/:boardId" element={<BoardView />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/board/:boardId" element={<BoardView />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toaster />
+    </>
   )
 }
 

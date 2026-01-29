@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useBoardDetails } from '@/hooks/useBoardDetails'
+import { useUpdateBoardMutation } from '@/hooks/useBoards'
 import Column from './Column'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,9 +11,12 @@ import { useQueryClient } from '@tanstack/react-query'
 
 export default function BoardView() {
   const { boardId } = useParams<{ boardId: string }>()
-  const { board, isLoading, error, addColumn, addTask, moveTask } = useBoardDetails(boardId)
+  const { board, isLoading, error, addColumn, addTask, moveTask, deleteColumn, updateColumn, deleteTask } = useBoardDetails(boardId)
+  const updateBoardMutation = useUpdateBoardMutation()
   const [isAddingColumn, setIsAddingColumn] = useState(false)
   const [newColumnTitle, setNewColumnTitle] = useState("")
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editedTitle, setEditedTitle] = useState("")
   const queryClient = useQueryClient()
 
   const handleDragEnd = (result: DropResult) => {
@@ -62,6 +66,37 @@ export default function BoardView() {
     setIsAddingColumn(false)
   }
 
+  const handleStartEditingTitle = () => {
+    if (board) {
+      setEditedTitle(board.title)
+      setIsEditingTitle(true)
+    }
+  }
+
+  const handleSaveTitle = () => {
+    if (!boardId || !editedTitle.trim() || editedTitle === board?.title) {
+      setIsEditingTitle(false)
+      return
+    }
+
+    updateBoardMutation.mutate({
+      boardId,
+      updates: { title: editedTitle }
+    }, {
+      onSuccess: () => {
+        setIsEditingTitle(false)
+      }
+    })
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveTitle()
+    } else if (e.key === 'Escape') {
+      setIsEditingTitle(false)
+    }
+  }
+
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">Loading board...</div>
   }
@@ -75,7 +110,23 @@ export default function BoardView() {
       <div className="flex flex-col h-screen bg-background">
         {/* Board Header */}
         <div className="h-14 border-b flex items-center px-6 shrink-0">
-          <h1 className="text-xl font-bold">{board.title}</h1>
+          {isEditingTitle ? (
+            <Input
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              onBlur={handleSaveTitle}
+              onKeyDown={handleTitleKeyDown}
+              className="text-xl font-bold h-10 max-w-md"
+              autoFocus
+            />
+          ) : (
+            <h1 
+              className="text-xl font-bold cursor-pointer hover:text-primary transition-colors"
+              onClick={handleStartEditingTitle}
+            >
+              {board.title}
+            </h1>
+          )}
         </div>
 
         {/* Board Content (Horizontal Scroll) */}
@@ -87,7 +138,10 @@ export default function BoardView() {
               <Column 
                 key={column.id} 
                 column={column} 
-                onAddTask={(columnId, title) => addTask({ columnId, title })} 
+                onAddTask={(columnId, title) => addTask({ columnId, title })}
+                onDeleteColumn={deleteColumn}
+                onUpdateColumn={updateColumn}
+                onDeleteTask={deleteTask}
               />
             ))}
 

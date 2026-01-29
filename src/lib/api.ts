@@ -44,3 +44,29 @@ export async function createBoard(title: string) {
 
   return data as Board
 }
+
+export async function deleteBoard(boardId: string) {
+  const { error } = await supabase
+    .from('boards')
+    .delete()
+    .eq('id', boardId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
+export async function updateBoard(boardId: string, updates: Partial<Board>) {
+  const { data, error } = await supabase
+    .from('boards')
+    .update(updates)
+    .eq('id', boardId)
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data as Board
+}

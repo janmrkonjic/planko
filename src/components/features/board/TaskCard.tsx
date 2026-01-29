@@ -7,9 +7,10 @@ import TaskDetailModal from "./TaskDetailModal"
 interface TaskCardProps {
   task: Task
   index: number
+  onDeleteTask?: (taskId: string) => void
 }
 
-export default function TaskCard({ task, index }: TaskCardProps) {
+export default function TaskCard({ task, index, onDeleteTask }: TaskCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
@@ -40,7 +41,8 @@ export default function TaskCard({ task, index }: TaskCardProps) {
         <TaskDetailModal 
           taskId={task.id} 
           isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
+          onClose={() => setIsModalOpen(false)}
+          onDeleteTask={onDeleteTask}
         />
       )}
     </>

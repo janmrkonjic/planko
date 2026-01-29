@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { Task, Subtask } from '@/types'
+import { toast } from 'sonner'
 
 export function useTaskDetails(taskId: string | undefined) {
   const queryClient = useQueryClient()
@@ -50,6 +51,10 @@ export function useTaskDetails(taskId: string | undefined) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] })
       queryClient.invalidateQueries({ queryKey: ['board'] }) // Invalidate board to update description preview if needed
+      toast.success('Task updated successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update task: ${error.message}`)
     },
   })
 
@@ -79,9 +84,10 @@ export function useTaskDetails(taskId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] })
+      toast.success('Subtask added successfully')
     },
-    onError: (error) => {
-      console.error("Failed to add subtask:", error)
+    onError: (error: Error) => {
+      toast.error(`Failed to add subtask: ${error.message}`)
     }
   })
 
@@ -108,6 +114,7 @@ export function useTaskDetails(taskId: string | undefined) {
     },
     onError: (_err, _newSubtask, context) => {
       queryClient.setQueryData(['subtasks', taskId], context?.previousSubtasks)
+      toast.error('Failed to update subtask')
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] })
@@ -125,6 +132,10 @@ export function useTaskDetails(taskId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] })
+      toast.success('Subtask deleted successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete subtask: ${error.message}`)
     },
   })
 

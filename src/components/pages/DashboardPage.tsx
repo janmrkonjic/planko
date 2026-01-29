@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useBoardsQuery, useCreateBoardMutation } from '@/hooks/useBoards'
+import { useBoardsQuery, useCreateBoardMutation, useDeleteBoardMutation } from '@/hooks/useBoards'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -32,16 +42,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
   const { data: boards, isLoading, error } = useBoardsQuery()
   const createBoardMutation = useCreateBoardMutation()
+  const deleteBoardMutation = useDeleteBoardMutation()
   
   const [newBoardTitle, setNewBoardTitle] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [boardToDelete, setBoardToDelete] = useState<string | null>(null)
 
   const handleCreateBoard = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +63,15 @@ export default function DashboardPage() {
       onSuccess: () => {
         setNewBoardTitle('')
         setIsDialogOpen(false)
+      },
+    })
+  }
+
+  const handleDeleteBoard = () => {
+    if (!boardToDelete) return
+    deleteBoardMutation.mutate(boardToDelete, {
+      onSuccess: () => {
+        setBoardToDelete(null)
       },
     })
   }
@@ -175,31 +196,62 @@ export default function DashboardPage() {
               <Card 
                 key={board.id} 
                 className="group relative cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
-                onClick={() => navigate(`/board/${board.id}`)}
               >
-                <CardHeader>
-                  <CardTitle className="text-xl group-hover:text-primary transition-colors">{board.title}</CardTitle>
-                  <CardDescription>
-                     Created {new Date(board.created_at).toLocaleDateString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-muted-foreground">
-                    {/* Placeholder for task count or recent activity */}
-                    Manage tasks and workflows.
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="secondary" className="w-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    View Board
-                  </Button>
-                </CardFooter>
+                <div onClick={() => navigate(`/board/${board.id}`)}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-xl group-hover:text-primary transition-colors">{board.title}</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setBoardToDelete(board.id)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <CardDescription>
+                       Created {new Date(board.created_at).toLocaleDateString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-muted-foreground">
+                      {/* Placeholder for task count or recent activity */}
+                      Manage tasks and workflows.
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="secondary" className="w-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      View Board
+                    </Button>
+                  </CardFooter>
+                </div>
               </Card>
             ))}
           </div>
         )}
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!boardToDelete} onOpenChange={(open) => !open && setBoardToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the board and all its columns, tasks, and subtasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteBoard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
-

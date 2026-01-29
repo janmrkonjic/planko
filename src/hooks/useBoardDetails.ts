@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { BoardDetails, Task } from '../types'
+import { toast } from 'sonner'
 
 export function useBoardDetails(boardId: string | undefined) {
   const queryClient = useQueryClient()
@@ -86,6 +87,46 @@ export function useBoardDetails(boardId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['board', boardId] })
+      toast.success('Column created successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create column: ${error.message}`)
+    },
+  })
+
+  const deleteColumn = useMutation({
+    mutationFn: async (columnId: string) => {
+      const { error } = await supabase
+        .from('columns')
+        .delete()
+        .eq('id', columnId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board', boardId] })
+      toast.success('Column deleted successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete column: ${error.message}`)
+    },
+  })
+
+  const updateColumn = useMutation({
+    mutationFn: async ({ columnId, updates }: { columnId: string; updates: { title?: string } }) => {
+      const { error } = await supabase
+        .from('columns')
+        .update(updates)
+        .eq('id', columnId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board', boardId] })
+      toast.success('Column updated successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update column: ${error.message}`)
     },
   })
 
@@ -116,6 +157,28 @@ export function useBoardDetails(boardId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['board', boardId] })
+      toast.success('Task created successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create task: ${error.message}`)
+    },
+  })
+
+  const deleteTask = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board', boardId] })
+      toast.success('Task deleted successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete task: ${error.message}`)
     },
   })
 
@@ -141,7 +204,10 @@ export function useBoardDetails(boardId: string | undefined) {
     isLoading,
     error,
     addColumn: addColumn.mutate,
+    deleteColumn: deleteColumn.mutate,
+    updateColumn: updateColumn.mutate,
     addTask: addTask.mutate,
+    deleteTask: deleteTask.mutate,
     moveTask: moveTask.mutate,
   }
 }
