@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import type { BoardDetails, Task } from '@/types'
+import type { BoardDetails } from '@/types'
 
 interface BoardStatsProps {
   board: BoardDetails

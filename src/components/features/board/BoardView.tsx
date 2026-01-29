@@ -34,7 +34,7 @@ export default function BoardView() {
   const isFiltering = searchQuery.trim() !== '' || priorityFilter !== 'all'
 
   const handleDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result
+    const { destination, source } = result
     
     // Dropped outside or no change
     if (!destination) return
