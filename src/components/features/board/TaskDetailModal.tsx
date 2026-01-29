@@ -3,10 +3,16 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { useTaskDetails } from "@/hooks/useTaskDetails"
-import { X, Wand2, Trash2 } from "lucide-react"
+import { X, Wand2, Trash2, CalendarIcon } from "lucide-react"
 import { useState } from "react"
 import { useAiBreakdown } from "@/hooks/useAiBreakdown"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import type { Priority } from "@/types"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +77,14 @@ export default function TaskDetailModal({ taskId, isOpen, onClose, onDeleteTask 
     setShowDeleteDialog(false)
   }
 
+  const handlePriorityChange = (priority: Priority) => {
+    updateTask({ priority })
+  }
+
+  const handleDueDateChange = (date: Date | undefined) => {
+    updateTask({ due_date: date ? date.toISOString() : null })
+  }
+
   if (isLoading && !task) return null
 
   return (
@@ -92,6 +106,48 @@ export default function TaskDetailModal({ taskId, isOpen, onClose, onDeleteTask 
                 placeholder="Add a more detailed description..."
                 className="min-h-[100px] resize-none"
               />
+            </div>
+
+            {/* Metadata Section */}
+            <div className="mb-6 grid grid-cols-2 gap-4">
+              {/* Priority Selector */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Priority</Label>
+                <Select value={task?.priority || 'medium'} onValueChange={handlePriorityChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Due Date Picker */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Due Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {task?.due_date ? format(new Date(task.due_date), "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={task?.due_date ? new Date(task.due_date) : undefined}
+                      onSelect={handleDueDateChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             {/* Subtasks Section */}

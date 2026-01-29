@@ -13,11 +13,15 @@ export interface Column {
   created_at: string
 }
 
+export type Priority = 'low' | 'medium' | 'high'
+
 export interface Task {
   id: string
   column_id: string
   title: string
   description?: string
+  priority: Priority
+  due_date: string | null
   order_index: number
   created_at: string
 }
