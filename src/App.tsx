@@ -19,7 +19,7 @@ function App() {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-background text-foreground">
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/settings" element={<SettingsPage />} />
@@ -27,7 +27,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
-    </>
+    </div>
   )
 }
 

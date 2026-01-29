@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBoardsQuery, useCreateBoardMutation, useDeleteBoardMutation } from '@/hooks/useBoards'
 import { useAuth } from '@/hooks/useAuth'
+import { useProfileQuery } from '@/hooks/useProfile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -48,6 +49,7 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
   const { data: boards, isLoading, error } = useBoardsQuery()
+  const { data: profile } = useProfileQuery()
   const createBoardMutation = useCreateBoardMutation()
   const deleteBoardMutation = useDeleteBoardMutation()
   
@@ -80,12 +82,16 @@ export default function DashboardPage() {
     await signOut()
   }
 
-  const userInitials = session?.user.email?.substring(0, 2).toUpperCase() || 'U'
+  const userInitials = profile?.username?.substring(0, 2).toUpperCase() || 
+    profile?.full_name?.substring(0, 2).toUpperCase() || 
+    session?.user.email?.substring(0, 2).toUpperCase() || 'U'
+  
+  const displayName = profile?.full_name || profile?.username || session?.user.email?.split('@')[0] || 'User'
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-white px-6 shadow-sm">
+      <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background px-6 shadow-sm">
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-primary">
             Planko
@@ -96,7 +102,7 @@ export default function DashboardPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={session?.user.user_metadata?.avatar_url} alt="User" />
+                    <AvatarImage src={profile?.avatar_url || undefined} alt="User" />
                     <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -124,12 +130,19 @@ export default function DashboardPage() {
       </header>
 
       <main className="container mx-auto py-8 px-6">
+        {/* Hero Section */}
+        <div className="mb-12">
+          <h1 className="text-4xl font-bold tracking-tight mb-2">
+            Welcome back, {displayName}!
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Manage your boards and stay organized.
+          </p>
+        </div>
+
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">Workspaces</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your boards and projects.
-            </p>
+            <h2 className="text-2xl font-bold tracking-tight">Your Boards</h2>
           </div>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -182,7 +195,7 @@ export default function DashboardPage() {
              Error loading boards: {(error as Error).message}
           </div>
         ) : boards?.length === 0 ? (
-          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed bg-slate-50/50 p-8 text-center animate-in fade-in-50">
+          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed bg-muted/50 p-8 text-center animate-in fade-in-50">
             <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
               <h3 className="mt-4 text-lg font-semibold">No boards created</h3>
               <p className="mb-4 mt-2 text-sm text-muted-foreground">
@@ -194,7 +207,7 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {boards?.map((board) => (
               <Card 
                 key={board.id} 
