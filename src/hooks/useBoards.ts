@@ -15,6 +15,8 @@ export function useBoardsQuery() {
     queryKey: BOARD_KEYS.all(user?.id),
     queryFn: getBoards,
     enabled: !!user,
+    refetchInterval: 5000, // Poll every 5 seconds for dashboard updates
+    refetchIntervalInBackground: false, // Pause polling when tab is inactive
   })
 }
 

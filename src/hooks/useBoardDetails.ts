@@ -58,6 +58,8 @@ export function useBoardDetails(boardId: string | undefined) {
       } as BoardDetails
     },
     enabled: !!boardId,
+    refetchInterval: 3000, // Poll every 3 seconds for near-real-time updates
+    refetchIntervalInBackground: false, // Pause polling when tab is inactive
   })
 
   const addColumn = useMutation({
