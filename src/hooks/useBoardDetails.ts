@@ -89,12 +89,49 @@ export function useBoardDetails(boardId: string | undefined) {
       if (error) throw error
       return data
     },
+    onMutate: async (title: string) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['board', boardId] })
+
+      // Snapshot the previous value
+      const previousBoard = queryClient.getQueryData<BoardDetails>(['board', boardId, user?.id])
+
+      // Optimistically update the cache
+      if (previousBoard) {
+        const tempId = `temp-${Date.now()}`
+        const nextOrderIndex = previousBoard.columns.length > 0 
+          ? Math.max(...previousBoard.columns.map(col => col.order_index)) + 1 
+          : 0
+
+        const optimisticColumn = {
+          id: tempId,
+          board_id: boardId!,
+          title,
+          order_index: nextOrderIndex,
+          created_at: new Date().toISOString(),
+          tasks: []
+        }
+
+        queryClient.setQueryData<BoardDetails>(['board', boardId, user?.id], {
+          ...previousBoard,
+          columns: [...previousBoard.columns, optimisticColumn]
+        })
+      }
+
+      // Return context with the snapshot
+      return { previousBoard }
+    },
+    onError: (error: Error, _title, context) => {
+      // Roll back to the previous value on error
+      if (context?.previousBoard) {
+        queryClient.setQueryData(['board', boardId, user?.id], context.previousBoard)
+      }
+      toast.error(`Failed to create column: ${error.message}`)
+    },
     onSuccess: () => {
+      // Invalidate to fetch the real data with actual ID
       queryClient.invalidateQueries({ queryKey: ['board', boardId] })
       toast.success('Column created successfully')
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to create column: ${error.message}`)
     },
   })
 
@@ -159,12 +196,62 @@ export function useBoardDetails(boardId: string | undefined) {
       if (error) throw error
       return data
     },
+    onMutate: async ({ columnId, title }) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['board', boardId] })
+
+      // Snapshot the previous value
+      const previousBoard = queryClient.getQueryData<BoardDetails>(['board', boardId, user?.id])
+
+      // Optimistically update the cache
+      if (previousBoard) {
+        const tempId = `temp-task-${Date.now()}`
+        const column = previousBoard.columns.find(col => col.id === columnId)
+        
+        if (column) {
+          const nextOrderIndex = column.tasks.length > 0
+            ? Math.max(...column.tasks.map(task => task.order_index)) + 1
+            : 0
+
+          const optimisticTask: Task = {
+            id: tempId,
+            column_id: columnId,
+            title,
+            description: undefined,
+            priority: 'medium' as const,
+            due_date: null,
+            assignee_id: null,
+            order_index: nextOrderIndex,
+            created_at: new Date().toISOString(),
+          }
+
+          const updatedColumns = previousBoard.columns.map(col =>
+            col.id === columnId
+              ? { ...col, tasks: [...col.tasks, optimisticTask] }
+              : col
+          )
+
+          queryClient.setQueryData<BoardDetails>(['board', boardId, user?.id], {
+            ...previousBoard,
+            columns: updatedColumns
+          })
+        }
+      }
+
+      // Return context with the snapshot
+      return { previousBoard }
+    },
+    onError: (error: Error, _variables, context) => {
+      // Roll back to the previous value on error
+      if (context?.previousBoard) {
+        queryClient.setQueryData(['board', boardId, user?.id], context.previousBoard)
+      }
+      toast.error(`Failed to create task: ${error.message}`)
+    },
     onSuccess: () => {
+      // Invalidate to fetch the real data with actual ID
       queryClient.invalidateQueries({ queryKey: ['board', boardId] })
       toast.success('Task created successfully')
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to create task: ${error.message}`)
     },
   })
 
@@ -191,9 +278,6 @@ export function useBoardDetails(boardId: string | undefined) {
       columnId: string; 
       allTasks: Task[];
     }) => {
-      // The allTasks array is already in the correct visual order from the optimistic update
-      // It contains ONLY the tasks in the destination column (after the move)
-      // We just need to assign sequential order_index values based on array position
       
       // Update all tasks in the column with sequential order_index values
       // The array is already in the correct order, so we just assign 0, 1, 2, 3...

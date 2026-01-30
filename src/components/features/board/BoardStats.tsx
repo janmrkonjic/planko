@@ -32,10 +32,13 @@ export default function BoardStats({ board, open, onOpenChange }: BoardStatsProp
       statusMap.set(col.title, col.tasks.length)
     })
 
-    const statusData = Array.from(statusMap.entries()).map(([name, value]) => ({
-      name,
-      value,
-    }))
+    // Filter out empty columns to prevent label overlap
+    const statusData = Array.from(statusMap.entries())
+      .map(([name, value]) => ({
+        name,
+        value,
+      }))
+      .filter(d => d.value > 0)
 
     // Priority Breakdown
     const priorityMap = { high: 0, medium: 0, low: 0 }
@@ -43,11 +46,12 @@ export default function BoardStats({ board, open, onOpenChange }: BoardStatsProp
       priorityMap[task.priority]++
     })
 
+    // Filter out priorities with no tasks to prevent label overlap
     const priorityData = [
       { name: 'High', value: priorityMap.high, priority: 'high' },
       { name: 'Medium', value: priorityMap.medium, priority: 'medium' },
       { name: 'Low', value: priorityMap.low, priority: 'low' },
-    ]
+    ].filter(d => d.value > 0)
 
     // Completion Rate (assuming last column is "Done")
     const doneColumn = board.columns[board.columns.length - 1]
@@ -63,13 +67,12 @@ export default function BoardStats({ board, open, onOpenChange }: BoardStatsProp
     }
   }, [allTasks, board.columns])
 
-  // Colors for charts (dark mode compatible using CSS variables)
   const STATUS_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
   
   const PRIORITY_COLORS = {
-    high: 'hsl(0 84.2% 60.2%)', // destructive color
-    medium: 'hsl(47.9 95.8% 53.1%)', // warning/amber
-    low: 'hsl(142.1 76.2% 36.3%)', // success/green
+   high: '#ef4444',
+    medium: '#f59e0b',
+    low: '#3b82f6',
   }
 
   return (
@@ -123,7 +126,7 @@ export default function BoardStats({ board, open, onOpenChange }: BoardStatsProp
               <CardContent>
                 {metrics.total > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
+                    <PieChart margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
                       <Pie
                         data={metrics.statusData}
                         cx="50%"
@@ -172,6 +175,7 @@ export default function BoardStats({ board, open, onOpenChange }: BoardStatsProp
                       />
                       <YAxis 
                         stroke="hsl(var(--muted-foreground))"
+                        allowDecimals={false}
                       />
                       <Tooltip 
                         contentStyle={{ 

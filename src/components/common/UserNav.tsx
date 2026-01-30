@@ -11,14 +11,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useQueryClient } from '@tanstack/react-query'
 
 export function UserNav() {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
   const { data: profile } = useProfileQuery()
+  const queryClient = useQueryClient()
 
   const handleSignOut = async () => {
+    queryClient.clear()
+    
+    // Sign out from Supabase
     await signOut()
+
+    navigate('/', { replace: true })
   }
 
   return (

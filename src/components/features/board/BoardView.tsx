@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useBoardDetails } from '@/hooks/useBoardDetails'
 import { useUpdateBoardMutation } from '@/hooks/useBoards'
 import Column from './Column'
@@ -8,7 +8,7 @@ import { UserNav } from '@/components/common/UserNav'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, X, Search, AlertCircle, BarChart3, Users } from 'lucide-react'
+import { Plus, X, Search, AlertCircle, BarChart3, Users, ArrowLeft } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { useQueryClient } from '@tanstack/react-query'
@@ -16,6 +16,7 @@ import type { Priority } from '@/types'
 
 export default function BoardView() {
   const { boardId } = useParams<{ boardId: string }>()
+  const navigate = useNavigate()
   const { board, isLoading, error, addColumn, addTask, moveTask, deleteColumn, updateColumn, deleteTask } = useBoardDetails(boardId)
   const updateBoardMutation = useUpdateBoardMutation()
   const [isAddingColumn, setIsAddingColumn] = useState(false)
@@ -121,7 +122,7 @@ export default function BoardView() {
       columns: board.columns.map(column => ({
         ...column,
         tasks: column.tasks.filter(task => {
-          // Search filter (case-insensitive)
+          // Search filter
           const matchesSearch = searchQuery.trim() === '' || 
             task.title.toLowerCase().includes(searchQuery.toLowerCase())
           
@@ -157,23 +158,37 @@ export default function BoardView() {
       <div className="flex flex-col h-screen bg-background">
         {/* Board Header */}
         <div className="h-14 border-b flex items-center justify-between px-6 shrink-0">
-          {isEditingTitle ? (
-            <Input
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              onBlur={handleSaveTitle}
-              onKeyDown={handleTitleKeyDown}
-              className="text-xl font-bold h-10 max-w-md"
-              autoFocus
-            />
-          ) : (
-            <h1 
-              className="text-xl font-bold cursor-pointer hover:text-primary transition-colors"
-              onClick={handleStartEditingTitle}
+          <div className="flex items-center gap-3">
+            {/* Back to Dashboard Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="gap-2"
             >
-              {board.title}
-            </h1>
-          )}
+              <ArrowLeft className="h-4 w-4" />
+              Dashboard
+            </Button>
+            
+            {/* Board Title */}
+            {isEditingTitle ? (
+              <Input
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onBlur={handleSaveTitle}
+                onKeyDown={handleTitleKeyDown}
+                className="text-xl font-bold h-10 max-w-md"
+                autoFocus
+              />
+            ) : (
+              <h1 
+                className="text-xl font-bold cursor-pointer hover:text-primary transition-colors"
+                onClick={handleStartEditingTitle}
+              >
+                {board.title}
+              </h1>
+            )}
+          </div>
           <UserNav />
         </div>
 

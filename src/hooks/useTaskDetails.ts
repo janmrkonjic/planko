@@ -82,12 +82,49 @@ export function useTaskDetails(taskId: string | undefined) {
         })
       if (error) throw error
     },
+    onMutate: async (title: string) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['subtasks', taskId] })
+
+      // Snapshot the previous value
+      const previousSubtasks = queryClient.getQueryData<Subtask[]>(['subtasks', taskId])
+
+      // Optimistically update the cache
+      if (previousSubtasks && taskId) {
+        const tempId = `temp-subtask-${Date.now()}`
+        const nextOrderIndex = previousSubtasks.length > 0
+          ? Math.max(...previousSubtasks.map(st => st.order_index)) + 1
+          : 0
+
+        const optimisticSubtask: Subtask = {
+          id: tempId,
+          task_id: taskId,
+          title,
+          is_completed: false,
+          order_index: nextOrderIndex,
+          created_at: new Date().toISOString(),
+        }
+
+        queryClient.setQueryData<Subtask[]>(['subtasks', taskId], [
+          ...previousSubtasks,
+          optimisticSubtask
+        ])
+      }
+
+      // Return context with the snapshot
+      return { previousSubtasks }
+    },
+    onError: (error: Error, _title, context) => {
+      // Roll back to the previous value on error
+      if (context?.previousSubtasks) {
+        queryClient.setQueryData(['subtasks', taskId], context.previousSubtasks)
+      }
+      toast.error(`Failed to add subtask: ${error.message}`)
+    },
     onSuccess: () => {
+      // Invalidate to fetch the real data with actual ID
       queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] })
       toast.success('Subtask added successfully')
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to add subtask: ${error.message}`)
     }
   })
 

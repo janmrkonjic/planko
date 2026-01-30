@@ -34,6 +34,6 @@ export function useAuth() {
     user,
     loading,
     signOut,
-    supabase, // Expose supabase client directly for flexible usage in AuthPage
+    supabase,
   }
 }
